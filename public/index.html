@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouTube Downloader API — by Shawon</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #08080f;
+      color: #e0e0e0;
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #08080f; }
+    ::-webkit-scrollbar-thumb { background: #2a2a4a; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #3a3a5a; }
+
+    .hero {
+      background: linear-gradient(135deg, #0b0b1a 0%, #1a0a2e 40%, #2d1b69 100%);
+      padding: 4rem 2rem 3rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -50%; left: -50%;
+      width: 200%; height: 200%;
+      background: radial-gradient(circle at 50% 50%, rgba(124,58,237,0.08) 0%, transparent 50%);
+      animation: pulse 8s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.5; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.1); }
+    }
+    .hero-content { position: relative; z-index: 1; }
+    .hero-badge {
+      display: inline-block;
+      background: rgba(124,58,237,0.2);
+      border: 1px solid rgba(124,58,237,0.4);
+      padding: 0.3rem 1rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      color: #a78bfa;
+      margin-bottom: 1rem;
+    }
+    .hero h1 {
+      font-size: 3rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #a78bfa, #7c3aed, #ec4899);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p { color: #999; font-size: 1.15rem; margin-top: 0.8rem; max-width: 600px; margin-left: auto; margin-right: auto; }
+    .hero-owner {
+      margin-top: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+      font-size: 0.95rem;
+    }
+    .hero-owner span { color: #666; }
+    .hero-owner a {
+      color: #a78bfa;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.4rem 1rem;
+      border: 1px solid #2a2a4a;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    .hero-owner a:hover { border-color: #7c3aed; background: rgba(124,58,237,0.1); }
+
+    .container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+    }
+    .stat-card {
+      background: #111122;
+      border: 1px solid #1e1e3a;
+      border-radius: 12px;
+      padding: 1.5rem;
+      text-align: center;
+      transition: border-color 0.2s;
+    }
+    .stat-card:hover { border-color: #7c3aed; }
+    .stat-card i { font-size: 1.8rem; color: #7c3aed; margin-bottom: 0.5rem; }
+    .stat-card h3 { font-size: 1.5rem; font-weight: 700; color: #fff; }
+    .stat-card p { color: #666; font-size: 0.85rem; margin-top: 0.2rem; }
+
+    .endpoint {
+      background: #111122;
+      border: 1px solid #1e1e3a;
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .endpoint:hover { border-color: #2a2a5a; transform: translateY(-2px); }
+    .endpoint-header { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 0.8rem; }
+    .endpoint-header h2 { font-size: 1.3rem; font-weight: 600; color: #fff; }
+    .method {
+      display: inline-block;
+      background: #10b981;
+      color: #fff;
+      padding: 0.15rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .path {
+      background: #1e1e3a;
+      color: #a78bfa;
+      padding: 0.25rem 0.8rem;
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.9rem;
+    }
+    .endpoint .desc { color: #888; margin-bottom: 1rem; font-size: 0.95rem; }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+    th, td { text-align: left; padding: 0.6rem 0.8rem; border-bottom: 1px solid #1e1e3a; }
+    th { color: #a78bfa; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    td { color: #aaa; }
+    pre {
+      background: #08080f;
+      padding: 1rem 1.2rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin-top: 0.8rem;
+      border: 1px solid #1e1e3a;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.85rem;
+      color: #a78bfa;
+      position: relative;
+    }
+    pre .comment { color: #555; }
+    .language-tag {
+      position: absolute;
+      top: 0.5rem;
+      right: 3.5rem;
+      color: #555;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .try-it {
+      background: linear-gradient(135deg, #111122, #1a0a2e);
+      border: 1px solid #2a2a5a;
+      border-radius: 12px;
+      padding: 2rem;
+      margin-top: 2rem;
+    }
+    .try-it h2 { font-size: 1.5rem; font-weight: 700; color: #fff; margin-bottom: 0.5rem; }
+    .try-it .sub { color: #888; margin-bottom: 1.5rem; font-size: 0.9rem; }
+    .input-group { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .input-group input {
+      flex: 1;
+      min-width: 200px;
+      padding: 0.85rem 1rem;
+      background: #08080f;
+      border: 1px solid #2a2a4a;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .input-group input:focus { border-color: #7c3aed; }
+    .input-group input::placeholder { color: #444; }
+    .btn {
+      padding: 0.85rem 1.5rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .btn-primary { background: #7c3aed; color: #fff; }
+    .btn-primary:hover { background: #6d28d9; transform: translateY(-1px); }
+    .btn-success { background: #10b981; color: #fff; }
+    .btn-success:hover { background: #059669; transform: translateY(-1px); }
+    .btn-outline { background: transparent; color: #a78bfa; border: 1px solid #3a3a5a; }
+    .btn-outline:hover { border-color: #7c3aed; background: rgba(124,58,237,0.1); }
+    .btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
+
+    .result-box {
+      margin-top: 1.2rem;
+      background: #08080f;
+      border: 1px solid #1e1e3a;
+      border-radius: 8px;
+      overflow: hidden;
+      display: none;
+    }
+    .result-box-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.6rem 1rem;
+      background: #0f0f1f;
+      border-bottom: 1px solid #1e1e3a;
+    }
+    .result-box-header span { color: #888; font-size: 0.8rem; }
+    .result-box-header .status { padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600; }
+    .status-success { background: rgba(16,185,129,0.15); color: #10b981; }
+    .status-error { background: rgba(239,68,68,0.15); color: #ef4444; }
+    .result-box pre {
+      margin: 0; border: none; border-radius: 0;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .result-box .download-link {
+      display: block;
+      padding: 0.8rem 1rem;
+      background: rgba(124,58,237,0.1);
+      color: #a78bfa;
+      text-decoration: none;
+      font-family: monospace;
+      font-size: 0.85rem;
+      border-top: 1px solid #1e1e3a;
+      transition: background 0.2s;
+    }
+    .result-box .download-link:hover { background: rgba(124,58,237,0.2); }
+
+    .loader { display: none; text-align: center; padding: 2rem; }
+    .loader.active { display: block; }
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid #1e1e3a;
+      border-top-color: #7c3aed;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loader p { color: #666; margin-top: 0.8rem; font-size: 0.85rem; }
+
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #fff;
+      margin: 2.5rem 0 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .section-title i { color: #7c3aed; }
+
+    .code-tabs {
+      display: flex;
+      gap: 0.25rem;
+      margin-bottom: 0;
+      padding: 0 0.8rem;
+      background: #0c0c18;
+      border-radius: 8px 8px 0 0;
+      border: 1px solid #1e1e3a;
+      border-bottom: none;
+    }
+    .code-tab {
+      padding: 0.6rem 1rem;
+      font-size: 0.8rem;
+      color: #666;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+    .code-tab:hover { color: #aaa; }
+    .code-tab.active { color: #a78bfa; border-bottom-color: #7c3aed; }
+    .code-block { display: none; }
+    .code-block.active { display: block; }
+    .code-block pre { border-radius: 0 0 8px 8px; border-top: none; margin-top: 0; }
+
+    footer {
+      text-align: center;
+      padding: 2.5rem 2rem;
+      color: #444;
+      border-top: 1px solid #1e1e3a;
+      margin-top: 3rem;
+    }
+    footer a { color: #7c3aed; text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+    footer .socials { margin-top: 0.8rem; display: flex; justify-content: center; gap: 1rem; }
+    footer .socials a { color: #555; font-size: 1.2rem; transition: color 0.2s; }
+    footer .socials a:hover { color: #a78bfa; text-decoration: none; }
+
+    @media (max-width: 640px) {
+      .hero h1 { font-size: 2rem; }
+      .hero { padding: 3rem 1.5rem 2rem; }
+      .container { padding: 1.5rem; }
+      .endpoint { padding: 1.5rem; }
+      .input-group { flex-direction: column; }
+      .input-group input { min-width: unset; }
+      .stats { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-badge"><i class="fas fa-bolt"></i> Free &amp; Unlimited</div>
+      <h1>YouTube Downloader API</h1>
+      <p>Download any YouTube video or audio instantly. No limits, no registration, completely free.</p>
+      <div class="hero-owner">
+        <span><i class="fas fa-user"></i> Owner: <strong>Shawon</strong></span>
+        <a href="https://t.me/ShawonXnone" target="_blank"><i class="fab fa-telegram-plane"></i> @ShawonXnone</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="container">
+    <div class="stats">
+      <div class="stat-card"><i class="fas fa-infinity"></i><h3>Unlimited</h3><p>No rate limits</p></div>
+      <div class="stat-card"><i class="fas fa-video"></i><h3>Video &amp; Audio</h3><p>Any format</p></div>
+      <div class="stat-card"><i class="fas fa-bolt"></i><h3>Fast</h3><p>Instant downloads</p></div>
+      <div class="stat-card"><i class="fas fa-globe"></i><h3>REST API</h3><p>Simple integration</p></div>
+    </div>
+
+    <h2 class="section-title"><i class="fas fa-plug"></i> API Endpoints</h2>
+
+    <div class="endpoint">
+      <div class="endpoint-header">
+        <span class="method">GET</span>
+        <span class="path">/api/download?url={youtube_url}</span>
+        <h2>Download</h2>
+      </div>
+      <p class="desc">Download a YouTube video or audio stream directly. Returns the file stream.</p>
+      <table>
+        <tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr>
+        <tr><td>url</td><td>string</td><td>Yes</td><td>Full YouTube URL (e.g. <code>https://youtu.be/VIDEO_ID</code>)</td></tr>
+      </table>
+      <div class="code-tabs">
+        <div class="code-tab active" onclick="switchTab(this, 'curl1')">cURL</div>
+        <div class="code-tab" onclick="switchTab(this, 'py1')">Python</div>
+        <div class="code-tab" onclick="switchTab(this, 'js1')">JavaScript</div>
+      </div>
+      <div class="code-block active" id="curl1"><pre><span class="comment"># Download a video</span>
+curl -L -o video.mp4 "https://your-app.vercel.app/api/download?url=https://youtu.be/D8YEkMjNumE"</pre></div>
+      <div class="code-block" id="py1"><pre><span class="comment"># Python</span>
+import requests
+
+url = "https://your-app.vercel.app/api/download"
+params = {"url": "https://youtu.be/D8YEkMjNumE"}
+r = requests.get(url, params=params, stream=True)
+with open("video.mp4", "wb") as f:
+    for chunk in r.iter_content(1024):
+        f.write(chunk)</pre></div>
+      <div class="code-block" id="js1"><pre><span class="comment">// JavaScript (Node.js)</span>
+const fs = require("fs");
+const https = require("https");
+
+const url = "https://your-app.vercel.app/api/download?url=" +
+  encodeURIComponent("https://youtu.be/D8YEkMjNumE");
+
+https.get(url, (res) => {
+  const file = fs.createWriteStream("video.mp4");
+  res.pipe(file);
+});</pre></div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header">
+        <span class="method">GET</span>
+        <span class="path">/api/info?url={youtube_url}</span>
+        <h2>Video Info</h2>
+      </div>
+      <p class="desc">Get video metadata (title, thumbnail, duration, etc.) with owner info and download link.</p>
+      <table>
+        <tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr>
+        <tr><td>url</td><td>string</td><td>Yes</td><td>Full YouTube URL</td></tr>
+      </table>
+      <div class="code-tabs">
+        <div class="code-tab active" onclick="switchTab(this, 'curl2')">cURL</div>
+        <div class="code-tab" onclick="switchTab(this, 'py2')">Python</div>
+        <div class="code-tab" onclick="switchTab(this, 'js2')">JavaScript</div>
+      </div>
+      <div class="code-block active" id="curl2"><pre><span class="comment"># Get video info</span>
+curl "https://your-app.vercel.app/api/info?url=https://youtu.be/D8YEkMjNumE" | jq .</pre></div>
+      <div class="code-block" id="py2"><pre><span class="comment"># Python</span>
+import requests, json
+
+url = "https://your-app.vercel.app/api/info"
+params = {"url": "https://youtu.be/D8YEkMjNumE"}
+r = requests.get(url, params=params)
+data = r.json()
+print(json.dumps(data, indent=2))</pre></div>
+      <div class="code-block" id="js2"><pre><span class="comment">// JavaScript</span>
+const res = await fetch(
+  "/api/info?url=" + encodeURIComponent("https://youtu.be/D8YEkMjNumE")
+);
+const data = await res.json();
+console.log(data);</pre></div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header">
+        <span class="method">GET</span>
+        <span class="path">/api</span>
+        <h2>API Root</h2>
+      </div>
+      <p class="desc">Returns API metadata, owner info, and all available endpoints.</p>
+      <pre class="no-tabs"><span class="comment"># Get API info</span>
+curl https://your-app.vercel.app/api</pre>
+    </div>
+
+    <h2 class="section-title"><i class="fas fa-flask"></i> Try It Now</h2>
+    <div class="try-it">
+      <h2>Test the API</h2>
+      <p class="sub">Enter a YouTube URL to fetch info or download.</p>
+      <div class="input-group">
+        <input type="text" id="videoUrl" placeholder="Paste YouTube URL here..." value="https://youtu.be/D8YEkMjNumE">
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="getInfo()"><i class="fas fa-info-circle"></i> Get Info</button>
+        <button class="btn btn-success" onclick="downloadVideo()"><i class="fas fa-download"></i> Download</button>
+        <button class="btn btn-outline" onclick="clearResult()"><i class="fas fa-times"></i> Clear</button>
+      </div>
+      <div class="loader" id="loader">
+        <div class="spinner"></div>
+        <p>Fetching video info...</p>
+      </div>
+      <div class="result-box" id="resultBox">
+        <div class="result-box-header">
+          <span id="resultTitle">Response</span>
+          <span class="status" id="resultStatus"></span>
+        </div>
+        <pre id="resultContent"></pre>
+      </div>
+    </div>
+
+    <h2 class="section-title"><i class="fas fa-code"></i> JSON Response Format</h2>
+    <div class="endpoint">
+      <p class="desc">Every API response includes the owner credentials:</p>
+      <pre class="no-tabs">{
+  <span class="comment">"owner": "Shawon",</span>
+  <span class="comment">"telegram": "@ShawonXnone",</span>
+  <span class="comment">"download_url": "https://...",</span>
+  <span class="comment">"video": { ... }</span>
+}</pre>
+    </div>
+  </div>
+
+  <footer>
+    <p>Built by <a href="https://t.me/ShawonXnone" target="_blank">Shawon</a> &middot; YouTube Downloader API &middot; Hosted on <a href="https://vercel.com" target="_blank">Vercel</a></p>
+    <div class="socials">
+      <a href="https://t.me/ShawonXnone" target="_blank" title="Telegram"><i class="fab fa-telegram-plane"></i></a>
+    </div>
+  </footer>
+
+  <script>
+    function switchTab(el, id) {
+      const parent = el.parentElement.parentElement;
+      parent.querySelectorAll('.code-tab').forEach(t => t.classList.remove('active'));
+      parent.querySelectorAll('.code-block').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+      document.getElementById(id).classList.add('active');
+    }
+
+    function showResult(data, isError) {
+      const box = document.getElementById('resultBox');
+      const content = document.getElementById('resultContent');
+      const status = document.getElementById('resultStatus');
+      const title = document.getElementById('resultTitle');
+      const loader = document.getElementById('loader');
+      loader.classList.remove('active');
+      box.style.display = 'block';
+      status.textContent = isError ? 'Error' : 'Success';
+      status.className = 'status ' + (isError ? 'status-error' : 'status-success');
+      title.textContent = isError ? 'Error Response' : 'Video Info';
+      content.textContent = JSON.stringify(data, null, 2);
+
+      const existingLink = box.querySelector('.download-link');
+      if (existingLink) existingLink.remove();
+
+      if (!isError && data.download_url) {
+        const link = document.createElement('a');
+        link.href = data.download_url;
+        link.className = 'download-link';
+        link.target = '_blank';
+        link.innerHTML = '<i class="fas fa-download"></i> Download: ' + data.download_url;
+        box.appendChild(link);
+      }
+
+      content.scrollTop = 0;
+    }
+
+    function showError(msg) {
+      showResult({ error: msg, owner: 'Shawon', telegram: '@ShawonXnone' }, true);
+    }
+
+    function getInfo() {
+      const url = document.getElementById('videoUrl').value.trim();
+      if (!url) { showError('Please enter a YouTube URL'); return; }
+      const loader = document.getElementById('loader');
+      const box = document.getElementById('resultBox');
+      loader.classList.add('active');
+      box.style.display = 'none';
+      fetch('/api/info?url=' + encodeURIComponent(url))
+        .then(r => r.json().then(data => ({ status: r.status, data })))
+        .then(({ status, data }) => {
+          if (status >= 400) showResult(data, true);
+          else showResult(data, false);
+        })
+        .catch(err => showError('Network error: ' + err.message));
+    }
+
+    function downloadVideo() {
+      const url = document.getElementById('videoUrl').value.trim();
+      if (!url) { showError('Please enter a YouTube URL'); return; }
+      window.open('/api/download?url=' + encodeURIComponent(url), '_blank');
+    }
+
+    function clearResult() {
+      const box = document.getElementById('resultBox');
+      const loader = document.getElementById('loader');
+      box.style.display = 'none';
+      loader.classList.remove('active');
+    }
+
+    document.getElementById('videoUrl').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') getInfo();
+    });
+  </script>
+</body>
+</html>
